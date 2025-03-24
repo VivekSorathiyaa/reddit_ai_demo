@@ -36,7 +36,7 @@ class _RedditHomePageState extends State<RedditHomePage> {
 
   Future<void> fetchRedditPosts() async {
     final response = await http.get(
-      Uri.parse('https://your-api-url.com/reddit/flutterdev'),
+      Uri.parse('https://reddit-ai-demo.onrender.com/reddit/flutterdev'),
     );
     if (response.statusCode == 200) {
       setState(() {
@@ -57,7 +57,7 @@ class _RedditHomePageState extends State<RedditHomePage> {
 
   Future<String> analyzeSentiment(String text) async {
     final response = await http.post(
-      Uri.parse('https://your-api-url.com/analyze_sentiment'),
+      Uri.parse('https://reddit-ai-demo.onrender.com/analyze_sentiment'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'text': text}),
     );
@@ -72,7 +72,9 @@ class _RedditHomePageState extends State<RedditHomePage> {
 
   Future<void> fetchTopicClusters() async {
     final response = await http.get(
-      Uri.parse('https://your-api-url.com/cluster_topics/flutterdev'),
+      Uri.parse(
+        'https://reddit-ai-demo.onrender.com/cluster_topics/flutterdev',
+      ),
     );
     if (response.statusCode == 200) {
       setState(() {
@@ -83,7 +85,7 @@ class _RedditHomePageState extends State<RedditHomePage> {
 
   Future<void> fetchTrendPrediction() async {
     final response = await http.get(
-      Uri.parse('https://your-api-url.com/predict_trend/flutterdev'),
+      Uri.parse('https://reddit-ai-demo.onrender.com/predict_trend/flutterdev'),
     );
     if (response.statusCode == 200) {
       setState(() {
