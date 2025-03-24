@@ -6,5 +6,3 @@ pandas
 scikit-learn
 prophet
 python-dotenv
-numpy
-seaborn
