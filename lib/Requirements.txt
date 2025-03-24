@@ -3,3 +3,6 @@ uvicorn
 vaderSentiment
 praw
 pandas
+scikit-learn
+prophet
+python-dotenv
