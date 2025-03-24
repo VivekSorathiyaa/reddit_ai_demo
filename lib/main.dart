@@ -1,7 +1,6 @@
 import 'dart:convert';
-import 'dart:developer';
 
-import 'package:fl_chart/fl_chart.dart'; // For visualizations
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 
@@ -27,31 +26,29 @@ class RedditHomePage extends StatefulWidget {
 
 class _RedditHomePageState extends State<RedditHomePage> {
   List posts = [];
+  List clusters = [];
+  List trend = [];
   Map<String, int> sentimentCounts = {
-    'Positive': 0,
-    'Negative': 0,
-    'Neutral': 0,
+    "Positive": 0,
+    "Negative": 0,
+    "Neutral": 0,
   };
 
   Future<void> fetchRedditPosts() async {
     final response = await http.get(
-      Uri.parse('https://www.reddit.com/r/flutterdev/top.json?limit=10'),
+      Uri.parse('https://your-api-url.com/reddit/flutterdev'),
     );
-
     if (response.statusCode == 200) {
-      final data = json.decode(response.body);
       setState(() {
-        posts = data['data']['children'];
+        posts = json.decode(response.body)['posts'];
       });
       analyzeAllPosts();
-    } else {
-      throw Exception('Failed to load posts');
     }
   }
 
   Future<void> analyzeAllPosts() async {
     for (var post in posts) {
-      String sentiment = await analyzeSentiment(post['data']['title']);
+      String sentiment = await analyzeSentiment(post['title']);
       setState(() {
         sentimentCounts[sentiment] = (sentimentCounts[sentiment] ?? 0) + 1;
       });
@@ -59,11 +56,8 @@ class _RedditHomePageState extends State<RedditHomePage> {
   }
 
   Future<String> analyzeSentiment(String text) async {
-    log("------analyzeSentiment------$text");
     final response = await http.post(
-      Uri.parse(
-        'https://reddit-ai-demo.onrender.com/analyze',
-      ), // Update with your deployed API
+      Uri.parse('https://your-api-url.com/analyze_sentiment'),
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'text': text}),
     );
@@ -76,10 +70,34 @@ class _RedditHomePageState extends State<RedditHomePage> {
     }
   }
 
+  Future<void> fetchTopicClusters() async {
+    final response = await http.get(
+      Uri.parse('https://your-api-url.com/cluster_topics/flutterdev'),
+    );
+    if (response.statusCode == 200) {
+      setState(() {
+        clusters = json.decode(response.body)['clusters'];
+      });
+    }
+  }
+
+  Future<void> fetchTrendPrediction() async {
+    final response = await http.get(
+      Uri.parse('https://your-api-url.com/predict_trend/flutterdev'),
+    );
+    if (response.statusCode == 200) {
+      setState(() {
+        trend = json.decode(response.body)['trend'];
+      });
+    }
+  }
+
   @override
   void initState() {
     super.initState();
     fetchRedditPosts();
+    fetchTopicClusters();
+    fetchTrendPrediction();
   }
 
   @override
@@ -89,33 +107,18 @@ class _RedditHomePageState extends State<RedditHomePage> {
       body: Column(
         children: [
           Container(height: 200, child: buildPieChart()),
+          Container(height: 200, child: buildTrendChart()),
           Expanded(
-            child:
-                posts.isEmpty
-                    ? Center(child: CircularProgressIndicator())
-                    : ListView.builder(
-                      itemCount: posts.length,
-                      itemBuilder: (context, index) {
-                        final post = posts[index]['data'];
-                        return FutureBuilder(
-                          future: analyzeSentiment(post['title']),
-                          builder: (context, snapshot) {
-                            String sentiment = 'Analyzing...';
-                            if (snapshot.connectionState ==
-                                    ConnectionState.done &&
-                                snapshot.hasData) {
-                              sentiment = snapshot.data as String;
-                            }
-                            return ListTile(
-                              title: Text(post['title']),
-                              subtitle: Text(
-                                'Upvotes: ${post['ups']} Sentiment: $sentiment',
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
+            child: ListView.builder(
+              itemCount: posts.length,
+              itemBuilder: (context, index) {
+                final post = posts[index];
+                return ListTile(
+                  title: Text(post['title']),
+                  subtitle: Text('Upvotes: ${post['ups']}'),
+                );
+              },
+            ),
           ),
         ],
       ),
@@ -132,6 +135,29 @@ class _RedditHomePageState extends State<RedditHomePage> {
                 title: entry.key,
               );
             }).toList(),
+      ),
+    );
+  }
+
+  Widget buildTrendChart() {
+    return LineChart(
+      LineChartData(
+        lineBarsData: [
+          LineChartBarData(
+            spots:
+                trend
+                    .map(
+                      (t) => FlSpot(
+                        DateTime.parse(
+                          t['ds'],
+                        ).millisecondsSinceEpoch.toDouble(),
+                        t['yhat'],
+                      ),
+                    )
+                    .toList(),
+            isCurved: true,
+          ),
+        ],
       ),
     );
   }
