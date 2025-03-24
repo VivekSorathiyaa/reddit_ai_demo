@@ -62,7 +62,7 @@ class _RedditHomePageState extends State<RedditHomePage> {
     log("------analyzeSentiment------$text");
     final response = await http.post(
       Uri.parse(
-        'https://your-live-api.onrender.com/analyze',
+        'https://reddit-ai-demo.onrender.com/analyze',
       ), // Update with your deployed API
       headers: {'Content-Type': 'application/json'},
       body: jsonEncode({'text': text}),
