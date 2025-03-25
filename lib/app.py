@@ -25,10 +25,12 @@ reddit = praw.Reddit(
 
 # Initialize FastAPI app
 app = FastAPI()
-
 @app.get("/fetch_reddit")
-def fetch_reddit(subreddit: str = Query("technology", title="Subreddit", description="Enter a subreddit name"),
-                 limit: int = Query(10, title="Limit", description="Number of posts to fetch", ge=1, le=100)):
+def fetch_reddit(
+    subreddit: str = Query("technology", title="Subreddit", description="Enter a subreddit name"),
+    limit: int = Query(10, title="Limit", description="Number of posts to fetch", ge=1, le=100),
+    after: str = Query("", title="After", description="The fullname of the last post to fetch next page")
+):
     """
     Fetches Reddit posts, performs sentiment analysis & clustering.
     """
@@ -36,8 +38,10 @@ def fetch_reddit(subreddit: str = Query("technology", title="Subreddit", descrip
     analyzer = SentimentIntensityAnalyzer()
 
     try:
-        # Fetch posts
-        for submission in reddit.subreddit(subreddit).hot(limit=limit):
+        # Fetch posts from the next page using the after parameter
+        submission_list = reddit.subreddit(subreddit).hot(limit=limit, params={"after": after})
+
+        for submission in submission_list:
             sentiment = analyzer.polarity_scores(submission.title)
             posts.append({
                 "title": submission.title,
@@ -57,7 +61,7 @@ def fetch_reddit(subreddit: str = Query("technology", title="Subreddit", descrip
         kmeans = KMeans(n_clusters=3, random_state=42).fit(X)
         df["cluster"] = kmeans.labels_
 
-        return df.to_dict(orient="records")
+        return {"posts": df.to_dict(orient="records"), "after": submission_list[-1].fullname}
 
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
